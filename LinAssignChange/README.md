@@ -5,11 +5,11 @@ The markdown file provided can be called to generate the Sankey visualization of
 
 <img src="scripts/sankeyExample.png" alt="Sankey Example" width="600"/>
 
-**Usage: **
+### Usage:
   * See the assignmentchange.r file as an example to call the markdown file to generate both the Sankey plot and document report.
   * Lineages of interest can be specified with the linFocus parameter to generate subsetted Sankey plots.
 
-**Input: **
+### Input:
 
   * inputDir = the folder that stores pangolin results from different runs in sub-folders in the "pangolin_analysis_2021_month_day" format, additional characters after 'day' are skipped.
     + (Default: At NML, set the inputDir to be the following folder from Natalie Knox "W:\\Projects\\covid-19\\analysis\\Ongoing_Pangolin_IRIDA_Updates\\")
@@ -26,7 +26,7 @@ The markdown file provided can be called to generate the Sankey visualization of
   
   * maxSankeyPx = 5000, maximum Sankey pixel in height
   
-**Output: ** Output files are saved under outputDir
+### Output: 
 
   * Sankey plot
   * Plots can be seen in the COVID19_assignmentThroughTime_report.html 
