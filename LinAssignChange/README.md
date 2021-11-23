@@ -1,12 +1,13 @@
-# COVID_data_science_misc
-Data science scripts on COVID related things
 
 ## Reporting Pangolin COVID19 Lineage assignment changes through time 
 The Pangoline lineage assignment of a sample can sometimes change through time due to creation of new lineages, changes in the PangoLEARN model, etc.
-The markdown file can be called to generate the Sankey visualization of changes in Pangolin lineage assignment through time, and report top changes in counts and proportions of lineages.
+The markdown file provided can be called to generate the Sankey visualization of changes in Pangolin lineage assignment through time using Google Visualization, and report top changes in counts and proportions of lineages in an html file. Note that this is for examining changes in lineage assignment specifically, and not reflecting the total count of samples available.
 
-** Usage **
-Use scripts in assignmentchange.r to call the markdown file to generate both the Sankey plot and document report.
+<img src="scripts/sankeyExample.png" alt="Sankey Example" width="600"/>
+
+**Usage: **
+  * See the assignmentchange.r file as an example to call the markdown file to generate both the Sankey plot and document report.
+  * Lineages of interest can be specified with the linFocus parameter to generate subsetted Sankey plots.
 
 **Input: **
 
@@ -29,3 +30,8 @@ Use scripts in assignmentchange.r to call the markdown file to generate both the
 
   * Sankey plot
   * Plots can be seen in the COVID19_assignmentThroughTime_report.html 
+
+  (Examples of the output can be viewed in data\pangolin_analysis_2021_11_17, which was used as the outputDir -- the latest pangolin result folder -- by default.)
+  
+### Contact
+Julie Chih-yu Chen chih-yu.chenATphac-aspc.gc.ca
