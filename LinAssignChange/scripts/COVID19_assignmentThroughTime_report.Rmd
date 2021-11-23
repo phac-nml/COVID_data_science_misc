@@ -1,0 +1,361 @@
+---
+title: "COVID19_Lineage_assignment_changes_through_time_report"
+author: "Julie Chih-yu Chen"
+date: "November 3, 2021"
+output: html_document
+---
+
+### The script in this markdown is used to generate the Sankey visualization of changes in Pangolin lineage assignment through time, and report top changes in counts and proportions of lineages.
+
+The default inputDir should be changed for your folder if not from NML. 
+
+
+**Input: **
+
+  * inputDir = the folder that stores pangolin results from different runs in sub-folders in the "pangolin_analysis_2021_month_day" format, additional characters after 'day' are skipped.
+    + (Default: At NML, set the inputDir to be the following folder from Natalie Knox "W:\\Projects\\covid-19\\analysis\\Ongoing_Pangolin_IRIDA_Updates\\")
+  
+  * outputDir: defaulted to the latest pangolin prediction folder under inputDir
+  
+  * selectT = the index of the runs to plot. See script below for example
+  
+  * typeselect = a corresponding output name for the selectT set
+  
+  * linFocus = NULL 
+    + if you wanted to examine changes in samples of all lineages within time points of interest. 
+    + Or set linFocus = c("AY.74","B.1.617.2","AY.45") for example if you only want to examine samples that have been assigned to specific lineages. Output name will concatenate the targeted lineages.
+  
+  * maxSankeyPx = 5000, maximum Sankey pixel in height
+  
+**Output: ** Output files are saved under outputDir
+
+  * Sankey plot
+  * Plots can be seen in the COVID19_assignmentThroughTime_report.html 
+
+### Setting parameters here
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = outputDir)
+require(googleVis)
+require(ggplot2)
+require(ggrepel)
+require(dplyr)
+```
+
+
+### loading pangolin prediction output: 
+lineage_report.csv in each of the folder under "inputDir"
+The pangolin, pangolearn and pango (designation) versions are printed
+
+```{r loaddata, echo=FALSE}
+
+pdates <- timev[selectT]
+pdatesclean <- timevclean[selectT]
+if(sum(duplicated(pdatesclean))>1){
+  warning("There are data run on the same date! Please keep only one run per day to avoid an error")
+}
+outname<-paste0(typeselect,"_",tail(pdatesclean,n=1)) ## using the last date/version as the name to be saved
+#print(outname)
+
+###############
+### Assignment extraction: only getting sample ID and assigned lineage, remove those that failed qc, take stock of the versions too
+###############
+
+linlist<-lapply(pdates,function(pdate){
+  datDir<-paste0(inputDir,pdate)
+  oplearn=NULL
+  
+  if(file.exists(paste0(datDir, "/lineage_report.csv"))){
+    oplearn<-read.csv(paste0(datDir, "/lineage_report.csv"))
+    print(paste(pdate, "pangolin:",oplearn$pangolin_version[1],"pangoLEARN:",oplearn$pangoLEARN_version[1], "pango:",oplearn$pango_version[1]))
+  
+    ### remove those that didn't pass qc
+    oplearn<-oplearn[oplearn$status=="passed_qc",c("taxon","lineage")]
+  }else{ ## gives a warning 
+    warning(paste(paste0(datDir, "/lineage_report.csv"), "isn't available."))}
+  oplearn
+
+})
+names(linlist)=pdates
+
+
+```
+
+```{r cntsLinTime, echo=FALSE}
+### the unique lineages in runs selected
+alllin <- sort(unique(unlist(lapply(linlist,function(y){y[,2]}))))
+print(paste("Total unique number of lineages in these run:",length(alllin)))
+
+### Counts of the lineages in each run
+alllincnt <- do.call(cbind,lapply(linlist,function(y){table(factor(y[,2], levels=alllin))}))
+colnames(alllincnt)=pdatesclean
+
+```
+
+### functions for plots
+```{r FCN_calbeforeGvis, include=FALSE}
+
+### keeping all samples that have a change at any stages, including new samples
+## options: "changesOnly" or "changesAndAppeared"
+## with options="changesOnly", samples that appeard in the middle timepoint and never change to the end won't be displayed, nor the ones that appeared in the last timepoint
+## With options = "changesAndAppeared", plotting samples with changes and also samples that appeared in later stage(s) without a requirement for assignment changes 
+compLinDiffMulti<-function(listInput, options="changesOnly"){
+  listInput<-lapply(listInput, function(y)y[!duplicated(y$taxon),]) ## remove duplicated samples in the same time point
+  tmp<-table(unlist(lapply(listInput, function(y)y$taxon)))
+  if(options=="changesOnly"){
+      commonSamp<-names(tmp)[tmp>1]##samples present in at least two stages
+  }
+  if(options=="changesAndAppeared"){
+    commonSamp<-names(tmp)
+  }  
+  
+  tmp2<-do.call(cbind,lapply(listInput, function(y,commonSamp){
+    nseen<-setdiff(commonSamp,y$taxon)
+    if(length(nseen)>0){
+      y=rbind(y,cbind(taxon=nseen,lineage=rep(NA,length(nseen))))
+    }
+    rownames(y)=y$taxon;
+    y[commonSamp,"lineage"]
+    }, commonSamp=commonSamp))
+  
+  if(options=="changesOnly"){
+    
+    whichDiff<- apply(tmp2,1,function(y){y=na.omit(y);sum(y!=y[length(y)],na.rm=T)>0}) 
+  }
+  if(options=="changesAndAppeared"){
+     whichDiff<- apply(tmp2,1,function(y){sum(y==y[length(y)],na.rm=T)!=length(y)})
+  }
+
+  diffMat<-tmp2[whichDiff,]
+  rownames(diffMat)=commonSamp[whichDiff]
+  diffMat
+  
+}
+
+#compChoice2=linlist[c(10,13,20)]
+#diffMat2<-compLinDiffMulti(compChoice2)
+
+
+##function credit, works excellent: https://stackoverflow.com/questions/15282580/how-to-generate-a-number-of-most-distinctive-colors-in-r
+get_distinct_hues <- function(ncolor,s=0.5,v=0.95,seed=40) {
+  golden_ratio_conjugate <- 0.618033988749895
+  set.seed(seed)
+  h <- runif(1)
+  H <- vector("numeric",ncolor)
+  for(i in seq_len(ncolor)) {
+    h <- (h + golden_ratio_conjugate) %% 1
+    H[i] <- h
+  }
+  hsv(H,s=s,v=v)
+}
+
+## Generate a pie chart of the change pairs to get a sense of the proportion
+#top topl=5 change pairs  
+simplifiedPie<-function(x,topl=5,nameAdd=""){
+  if(length(x)>0){
+    crit <- order(x, decreasing=T)<=topl
+    x2<-x[crit]
+    if(sum(!crit)>0){
+      x2<-c(x2,sum(x[!crit]))
+      names(x2)[length(x2)]="Others"
+    }
+    pie(x2,main=paste0(nameAdd,": ",length(x)," changes in total"))
+  }else{print(paste("No changes in", nameAdd))}
+}
+
+```
+
+
+### Generation of the sankey plot 
+*Only lineage changes within any of the selected time points are plotted
+*Samples unavailable in previous time points are labeled as NA
+```{r googleVizMulti, echo=FALSE}
+### run givsSankey
+### multi-level https://stackoverflow.com/questions/45510421/how-to-make-a-googlevis-multiple-sankey-from-a-data-frame
+
+compChoice <- linlist[names(linlist)] ##running all selected previously
+
+diffMat<-compLinDiffMulti(compChoice)
+
+### if one is only interested in specific lineages, then only keeping samples that have been assigned to be one of the targeted lineages
+if (!is.null(linFocus)){
+  diffMat<-diffMat[rowSums(matrix(diffMat%in%linFocus,nrow=nrow(diffMat)))>0,]
+  outname=paste0(outname,"_",paste(linFocus,collapse="_"))
+}
+
+
+
+### adding the column names for time point notification
+diffMat2<-diffMat
+for(i in 1:ncol(diffMat)){
+  diffMat2[,i]=paste(diffMat[,i],pdatesclean[i],sep="_") 
+  
+}
+counts <- rep(1, nrow(diffMat)) 
+
+dat <- data.frame(diffMat2,counts)
+
+
+    
+#Aggregate data into a three column table, (from, to and counts) for sequential pair-wise time points
+#an automatted way, samples weren't available previously are labelled as NA
+datVis=NULL
+for(i in 1:(ncol(dat)-2)){
+  from=dat[,i]
+  to=dat[,i+1]
+  dat0=data.frame(from,to, counts)
+  suppressWarnings(tt0<-dat0 %>%
+    group_by(from, to) %>%
+    summarise(counts = sum(counts) ) %>%
+    ungroup())
+  
+  datVis<- rbind(datVis,tt0) 
+  
+}    
+#print(nrow(datVis))
+
+### customizing color
+uniqOrder=unique(as.vector(t(as.matrix(datVis[,1:2]))))
+uniqOrderLin<-as.factor(sapply(strsplit(uniqOrder,"_"),function(y)y[1]))
+#print(length(levels(uniqOrderLin))) # the number of unique lineages: colors required
+
+nodeColors=get_distinct_hues(length(levels(uniqOrderLin)))[as.numeric(uniqOrderLin)]
+nodeColorsCmd= paste0("{ link: { colorMode: 'gradient'}, node: { colors: ['",paste(nodeColors,collapse="','"),"']} }")
+
+### setting height, with a maximum
+hei=ifelse(nrow(datVis)/1.5*10 > maxSankeyPx, maxSankeyPx, nrow(datVis)/1.5*10)
+
+## customized colors
+p3 <- gvisSankey(datVis, from="From", to="To", weight="counts",options=list(sankey=nodeColorsCmd, width=paste0(ncol(dat)*1.6*100,"px"), height=paste0(hei,"px"))) 
+
+## plotting sankey for visualization in a browswer
+plot(p3)
+
+### saving sankey html for distribution 
+htmlstring <- paste(c(p3$html$header,paste(p3$html$chart,collapse = ""),p3$html$caption,p3$html$footer),collapse = "\n")
+cat(htmlstring, file=paste0("sankey_",outname,".html"))
+
+```
+
+
+### Getting the overall counts and percentages of reassignment, consecutive time point comparison
+```{r statsOverall, echo=FALSE}
+### just get the overall counts and percentage of reassignment, consecutive comparison
+totSamp<-sapply(linlist,nrow)
+percReassign=NULL
+for (i in 1:(length(totSamp)-1)){
+  ttmp<-diffMat[,c(i,i+1)]
+  print(sum(ttmp[,1] != ttmp[,2],na.rm=T))
+  percReassign[i]=sum(ttmp[,1] != ttmp[,2],na.rm=T)/totSamp[i]*100
+}
+names(percReassign)=paste0(colnames(alllincnt)[-ncol(alllincnt)], "_to_", colnames(alllincnt)[-1])
+
+#the overall percentages of reassignment, consecutive comparison
+#print(percReassign)
+
+
+ggplot(data=data.frame(datesCompared=names(percReassign), percent=percReassign),aes(x=datesCompared, y=percent)) + geom_bar(stat="identity")+ theme(axis.text.x = element_text(angle=45, hjust=1)) + ggtitle(paste0("% samples w a change in assignment: Consecutive comparisons",pdatesclean[length(pdatesclean)]))+ylab("% change in assignment")+xlab("Comparison between consecutive runs")
+
+```
+
+### Examining changes per lineage with counts versus percentage
+One way to flag lineages with less steady assignment in question
+Figures labelling lineages with more than 50 samples & greater than 10% in changes
+
+```{r statsByLineage, echo=FALSE}
+## from diffMat get counts of difference per lineage at any stage vs the next
+## this is just the subset of lineage with change
+linchangeCnt<-do.call(rbind,lapply(alllin, function(lin0){
+  diffMatYNlin<-diffMat==lin0
+  colSums(diffMatYNlin, na.rm=T)
+  ret=c()
+  totCnt=alllincnt[lin0,]
+  for (i in 1:(ncol(diffMat)-1)){
+    if(totCnt[i]>0){
+      ret[i]=sum(diffMatYNlin[,i]==T&diffMatYNlin[,i+1]==F,na.rm=T)
+    }else{
+      ret[i]=NA
+    }
+  }
+  ret
+}))
+rownames(linchangeCnt)=alllin
+colnames(linchangeCnt)=paste0(colnames(alllincnt)[-ncol(alllincnt)], "_to_", colnames(alllincnt)[-1])
+
+
+
+#from diffMat, get proportion of difference per lineage at any stage vs the next
+linpercchange<-do.call(rbind,lapply(alllin, function(lin0){
+  diffMatYNlin<-diffMat==lin0
+  colSums(diffMatYNlin, na.rm=T)
+  ret=c()
+  totCnt=alllincnt[lin0,]
+  for (i in 1:(ncol(diffMat)-1)){
+    if(totCnt[i]>0){
+      ret[i]=sum(diffMatYNlin[,i]==T&diffMatYNlin[,i+1]==F,na.rm=T)/totCnt[i]*100
+    }else{
+      ret[i]=NA
+    }
+  }
+  ret
+}))
+rownames(linpercchange)=alllin
+colnames(linpercchange)=paste0(colnames(alllincnt)[-ncol(alllincnt)], "_to_", colnames(alllincnt)[-1])
+
+
+for(comparei in 1:ncol(linchangeCnt)){
+  cntvsperc<-data.frame(count=linchangeCnt[,comparei], percent=linpercchange[,comparei])
+  
+  #currently arbitrary
+  critLab<- cntvsperc$count>50 & cntvsperc$percent >10 
+  
+  p<-ggplot(cntvsperc,aes(count, percent,label=ifelse(critLab,rownames(cntvsperc),"")) )+geom_point(color = ifelse(critLab,"red","black"))+ scale_x_continuous(trans='log10')
+  
+  suppressWarnings(print(p + geom_text_repel()+ labs(title = colnames(linchangeCnt)[comparei])))
+}
+
+## extracting percent change by lineage of interest across runs
+#linpercchange[c("AY.4","B.1.617.2"),]
+
+### changes through time for the latest top 10 lineages, IF there are changes
+#linpercchange[names(head(sort(alllincnt[,ncol(alllincnt)], decreasing=T),10)),]
+
+### overall distribution of % changes between consecutive runs
+hist(linpercchange, breaks=30, main="Overall Distribution of Percent Changes between consecutive runs", xlab="Percent change",xlim=c(0,100))
+
+## percentile of changes by lineages
+#quantile(na.omit(as.vector(linpercchange)),probs=c(seq(0,0.8,0.1),seq(0.9,1,0.01)))
+
+### printing lineages with greater than 90% change
+print("printing lineages with greater than 90% change")
+(linpercchange.s<-linpercchange[rowSums(linpercchange>90,na.rm=T)>0,])
+
+
+
+```
+
+### Examining pairs of lineage changes between two timepoints
+```{r grabbing the pairs of changes, echo=FALSE}
+
+changePairs<-lapply(1:(ncol(diffMat)-1),function(i){
+  tc<-diffMat[,i]!=diffMat[,i+1]& !is.na(diffMat[,i]) & !is.na(diffMat[,i+1]) 
+  sort(table(paste(diffMat[tc,i],diffMat[tc,i+1],sep="_")), decreasing=T)
+})
+names(changePairs)=colnames(linpercchange)
+
+## print top 10 change pairs or those with changes of > 50 samples 
+lapply(changePairs,function(y) head(y,max(10,sum(y>50))))
+
+
+#Pie chart generation
+for(y in 1:length(changePairs)){
+  simplifiedPie(changePairs[[y]],nameAdd=names(changePairs)[y])
+}
+
+
+
+
+```
+
+
