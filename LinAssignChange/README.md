@@ -14,24 +14,24 @@ The markdown file provided can be called to generate the Sankey visualization of
   * inputDir = the folder that stores pangolin results from different runs in sub-folders in the "pangolin_analysis_2021_month_day" format, additional characters after 'day' are skipped.
     + (Default: At NML, set the inputDir to be the following folder from Natalie Knox "W:\\Projects\\covid-19\\analysis\\Ongoing_Pangolin_IRIDA_Updates\\")
   
-  * outputDir: defaulted to the latest pangolin prediction folder under inputDir
+  * outputDir = the output direcotory, defaulted to be the latest pangolin prediction folder under inputDir
   
-  * selectT = the index of the runs to plot. See script below for example
+  * selectT = the indices of the runs to plot, all or a subset. See assignmentchange.r for examples.
   
   * typeselect = a corresponding output name for the selectT set
   
-  * linFocus = NULL 
-    + if you wanted to examine changes in samples of all lineages within time points of interest. 
-    + Or set linFocus = c("AY.74","B.1.617.2","AY.45") for example if you only want to examine samples that have been assigned to specific lineages. Output name will concatenate the targeted lineages.
+  * linFocus = specify the specific lineages to be examined or use NULL for all lineages
+    + if you wanted to examine changes in all lineages within time points of interest, set linFocus = NULL 
+    + if you only want to examine samples that have been assigned to specific lineages, set linFocus = c("AY.74","B.1.617.2","AY.45") for example. Names of output files will  trail with concatenated targeted lineages for identification
   
-  * maxSankeyPx = 5000, maximum Sankey pixel in height
+  * maxSankeyPx = maximum Sankey pixel in height, default 5000, to avoid excessively long sankey plot
   
 ### Output: 
 
-  * Sankey plot
-  * Plots can be seen in the COVID19_assignmentThroughTime_report.html 
+  * Sankey plot in HTML
+  * Other analytical plots for proportion of changes and flagging lineages can be seen in the COVID19_assignmentThroughTime_report.html 
 
-  (Examples of the output can be viewed in data\pangolin_analysis_2021_11_17, which was used as the outputDir -- the latest pangolin result folder -- by default.)
+  (Sample output can be viewed in data\pangolin_analysis_2021_11_17, which was used as the outputDir -- the latest pangolin result folder -- by default.)
   
 ### Contact
-Julie Chih-yu Chen chih-yu.chenATphac-aspc.gc.ca
+Questions or comments can be directed to Julie Chih-yu Chen chih-yu.chenATphac-aspc.gc.ca
