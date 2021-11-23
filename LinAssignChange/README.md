@@ -1,8 +1,8 @@
 # COVID_data_science_misc
 Data science scripts on COVID related things
 
-## Reporting COVID19 Lineage assignment changes through time 
-Lineage assignment of a sample can sometimes change through time due to creation of new lineages, changes in the PangoLEARN model, etc.
+## Reporting Pangolin COVID19 Lineage assignment changes through time 
+The Pangoline lineage assignment of a sample can sometimes change through time due to creation of new lineages, changes in the PangoLEARN model, etc.
 The markdown file can be called to generate the Sankey visualization of changes in Pangolin lineage assignment through time, and report top changes in counts and proportions of lineages.
 
 ** Usage **
