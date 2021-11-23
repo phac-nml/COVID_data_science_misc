@@ -9,7 +9,8 @@ The markdown file provided can be called to generate the Sankey visualization of
   * See the assignmentchange.r file as an example to call the markdown file to generate both the Sankey plot and document report.
   * Lineages of interest can be specified with the linFocus parameter to generate subsetted Sankey plots.
 
-### Input:
+### Input: 
+  See the data folder for examples of input format.
 
   * inputDir = the folder that stores pangolin results from different runs in sub-folders in the "pangolin_analysis_2021_month_day" format, additional characters after 'day' are skipped.
     + (Default: At NML, set the inputDir to be the following folder from Natalie Knox "W:\\Projects\\covid-19\\analysis\\Ongoing_Pangolin_IRIDA_Updates\\")
