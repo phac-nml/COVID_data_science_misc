@@ -5,7 +5,10 @@
 #####################
 
 library(rmarkdown)
-
+require(googleVis)
+require(ggplot2)
+require(ggrepel)
+require(dplyr)
 
 ### Set your own input directory
 #inputDir="W:/Projects/covid-19/analysis/Ongoing_Pangolin_IRIDA_Updates/" ### NML only
