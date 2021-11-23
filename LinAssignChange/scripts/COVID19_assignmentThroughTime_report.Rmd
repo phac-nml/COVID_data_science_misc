@@ -5,9 +5,9 @@ date: "November 3, 2021"
 output: html_document
 ---
 
-### The script in this markdown is used to generate the Sankey visualization of changes in Pangolin lineage assignment through time, and report top changes in counts and proportions of lineages.
+ The script in this markdown is used to generate the Sankey visualization of changes in Pangolin lineage assignment through time, and report top changes in counts and proportions of lineages.
 
-### Setting parameters here
+
 ```{r setup, include=FALSE}
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -38,17 +38,17 @@ outname<-paste0(typeselect,"_",tail(pdatesclean,n=1)) ## using the last date/ver
 ###############
 
 linlist<-lapply(pdates,function(pdate){
-  datDir<-paste0(inputDir,pdate)
+  datDir<-file.path(inputDir,pdate)
   oplearn=NULL
   
-  if(file.exists(paste0(datDir, "/lineage_report.csv"))){
-    oplearn<-read.csv(paste0(datDir, "/lineage_report.csv"))
+  if(file.exists(file.path(datDir, "lineage_report.csv"))){
+    oplearn<-read.csv(file.path(datDir, "lineage_report.csv"))
     print(paste(pdate, "pangolin:",oplearn$pangolin_version[1],"pangoLEARN:",oplearn$pangoLEARN_version[1], "pango:",oplearn$pango_version[1]))
   
     ### remove those that didn't pass qc
     oplearn<-oplearn[oplearn$status=="passed_qc",c("taxon","lineage")]
   }else{ ## gives a warning 
-    warning(paste(paste0(datDir, "/lineage_report.csv"), "isn't available."))}
+    warning(paste(file.path(datDir, "lineage_report.csv"), "isn't available."))}
   oplearn
 
 })
@@ -68,7 +68,7 @@ colnames(alllincnt)=pdatesclean
 
 ```
 
-### functions for plots
+
 ```{r FCN_calbeforeGvis, include=FALSE}
 
 ### keeping all samples that have a change at any stages, including new samples

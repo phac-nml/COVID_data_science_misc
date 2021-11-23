@@ -9,12 +9,13 @@ require(googleVis)
 require(ggplot2)
 require(ggrepel)
 require(dplyr)
+require(here)
 
 ########
 ### Set your own input directory, example data is in the data folder
 ########
-#inputDir="W:/Projects/covid-19/analysis/Ongoing_Pangolin_IRIDA_Updates/" ### NML only
-inputDir="K:/COVID_data_science_misc/LinAssignChange/data/"
+#inputDir="W:/Projects/covid-19/analysis/Ongoing_Pangolin_IRIDA_Updates" ### NML only
+inputDir=here("data")
 
 ########
 ## acquiring folder names of pangolin results
@@ -26,19 +27,19 @@ timevclean<-substr(gsub("pangolin_analysis_2021_","",timev),1,5) ## narrowing do
 ## By default: the output directory is the latest pangolin output folder through name sorting
 ## You can set your own
 ########
-outputDir=paste0(inputDir,tail(timev,1))
+outputDir=file.path(inputDir,tail(timev,1))
 
 linFocusName=""
 ########
 ## You can choosing to show all lineages or a subset of lineages that had changes
 ########
-## all
+# all
 linFocus <- NULL 
-## Subset: If you only want to examine samples that have been assigned to a subset of lineages at time points selected. Use the script below
+# Subset: If you only want to examine samples that have been assigned to a subset of lineages at time points selected. Use the script below
 #linFocus <- c("AY.74","B.1.617.2","AY.45"); linFocusName=paste0("_",paste(linFocus,collapse="_"))
 
 ########
-### select the subset of data to compare
+### select the subset of data to compare: choose one of the following, last5 is chosen by default
 ########
 #selectT<-1:length(timev); typeselect="" # Plot all time points, no filter
 #selectT<-sort(c(1,4,6,10,13,15,23)); typeselect="sampled" ## select a sub-sample
