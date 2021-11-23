@@ -1,2 +1,4 @@
 # COVID_data_science_misc
-Data science scripts on COVID related things
+This is home for data science scripts on COVID related work
+
+Maintained by Julie Chih-yu Chen
