@@ -16,7 +16,6 @@ require(here)
 ########
 inputDir=here("data")
 
-
 ########
 ## acquiring folder names of pangolin results
 ########
