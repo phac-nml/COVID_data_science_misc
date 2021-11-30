@@ -14,8 +14,7 @@ require(here)
 ########
 ### Set your own input directory, example data is in the data folder
 ########
-inputDir="W:/Projects/covid-19/analysis/Ongoing_Pangolin_IRIDA_Updates" ### NML only
-#inputDir=here("data")
+inputDir=here("data")
 
 
 ########
