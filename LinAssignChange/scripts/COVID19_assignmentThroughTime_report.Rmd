@@ -137,12 +137,12 @@ simplifiedPie<-function(x,topl=5,nameAdd=""){
     }
     #pie(x2,main=paste0(nameAdd,": ",length(x)," changes in total")) #simplier plot
     
-    piedat<-data.frame(cate=names(x2),Freq=x2)
+    piedat<-data.frame(cate=names(x2),Freq=as.vector(x2))
     # Basic piechart
     piegg <- ggplot(piedat, aes(x="", y=Freq, fill=cate)) +
       geom_bar(stat="identity", width=1, color="white") +
       coord_polar("y", start=0) +
-      geom_text(aes(label = Freq), position = position_stack(vjust=0.5)) + labs(x = NULL, y = NULL, fill = "Lineage Change")+ theme_void()+ ggtitle(paste("Change pairs from", nameAdd))
+      geom_text(aes(label = Freq), position = position_stack(vjust=0.5)) + labs(x = NULL, y = NULL, fill = "Lineage Change")+ theme_void()+ ggtitle(paste(length(x),"Change pairs from", nameAdd))
     print(piegg)
     
   }else{
@@ -253,9 +253,10 @@ ggplot(data=data.frame(datesCompared=names(percReassign), percent=percReassign),
 ```
 
 ### Examining changes per lineage with counts versus percentage
-One way to flag lineages with less steady assignment in question
-Figures labelling top 10 lineages that are significant & those may or may not be significant but with greater than 10% in changes.
-The color legend reflects the level of significance in change from binomial tests: -log10(Bonferroni corrected p).
+One way to flag lineages with less steady assignment in question:
+- A bionimial test was conducted per lineage with the probability of change set to 10%, and subsequently the Bonferonni multiple hypothesis testing correction was followed.
+- The scatter plot highlights the percent and count changes per lineage, represented as points. These points are colored by its significance in changes. The color legend reflects the level of significance in change from binomial tests: -log10(Bonferroni-corrected p). Top 10 significant lineages or those with > 100 changes in counts were labeled in the figure.
+
 
 ```{r statsByLineage, echo=FALSE}
 ## could tidy the section up
@@ -330,10 +331,7 @@ if(nrow(diffMat)!=0){ ## if there are changes
     plotTopCnt=10
     cntvsperctop <- head(cntvsperc[order(cntvsperc$adjp),],plotTopCnt)
     
-    #currently arbitrary
-    #critLab<- cntvsperc$count>50 & cntvsperc$percent >10 
-    #critLab<- cntvsperc$count>50 
-    
+
     ### Using significance from Binomial test with Bonferroni adjusted p & labelling top "plotTopCnt"=10 + those with counts>100
     critLab <- (cntvsperc$adjp<0.05 & rownames(cntvsperc)%in%rownames(cntvsperctop)[1:plotTopCnt])|cntvsperc$count>100
     
@@ -383,6 +381,7 @@ if(nrow(diffMat)!=0){ ## if there are changes
 
 ### Examining pairs of lineage changes between two timepoints
 Top 5 pairs between two timepoints are visualized in a pie chart with counts of samples labeled, if there is any change between two timepoints.
+
 ```{r grabbing the pairs of changes, echo=FALSE}
 if(nrow(diffMat)!=0){ ## if there are changes
   
