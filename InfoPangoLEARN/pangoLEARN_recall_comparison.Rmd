@@ -1,0 +1,86 @@
+---
+title: "pangoLEARN_recall_comparison"
+author: "Julie Chih-yu Chen"
+date: "December 17, 2021"
+output: html_document
+---
+
+Comparison between the performance of DT and RF
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+require(here)
+library(ggplot2)
+dfolder="data/pangoLEARN-2021-12-06/pangoLEARN/data"
+
+```
+
+
+```{r metadataSub, echo=TRUE}
+print(dfolder)
+meta.s<-read.csv(here(dfolder,"lineages.downsample.csv"))
+dim(meta.s)
+## 2176
+
+tail(sort(table(meta.s[,"lineage"])))
+#sort(table(meta.s[,"lineage"]))
+#B.1.2    B.1.160  B.1.177.4        D.2          B  B.1.1.315   B.1.1.37 
+#1866       2035       2039       2321       2386       3104       3469 
+#B.1.5    B.1.1.1      B.1.1        B.1    B.1.177            
+#3692       5140       9199      13389      24075      48043 
+
+linCnt.s<- as.matrix(table(meta.s[,"lineage"])); linCnt.s<-data.frame(lineage=rownames(linCnt.s), cnt=linCnt.s, stringsAsFactors = F)
+
+```
+
+
+```{r recall, echo=TRUE}
+
+## DT performance
+pncd<-read.csv(here(dfolder,"decisionTree_recall_report.csv"))
+rownames(pncd)=pncd[,1]
+pncdp<-merge(pncd, linCnt.s, by="lineage") 
+plot(pncdp$support,pncdp$cnt, main="Support reflects the count from downsample")
+abline(coef = c(0,1), lty=2)
+
+plot(log10(pncdp$support),log10(pncdp$cnt), main="Support reflects the count from downsample")
+abline(coef = c(0,1), lty=2)
+
+
+## RF performance
+pncr<-read.csv(here(dfolder,"randomForest_recall_report.csv"))
+rownames(pncr)=pncr[,1]
+sum(pncd[,1]!=pncr[,1])
+pncr <- pncr[rownames(pncd),] # making sure the order of lineage is the same
+sum(pncd[,1]!=pncr[,1]) ## should be 0
+pncrp<-merge(pncr, linCnt.s, by="lineage") 
+
+
+## Relation between performance and counts
+plot(log10(pncdp$cnt), pncdp$f1_score, xlab="log10 (Training Sample Count)", ylab="Model Performance F1", main="DT")
+plot(log10(pncrp$cnt), pncrp$f1_score, xlab="log10 (Training Sample Count)", ylab="Model Performance F1", main="RF")
+hist(pncdp$recall)
+
+
+##Comparison between performance of pangoLEARN Decision Tree and Random Forest models
+for(metr in c("precision","recall","f1_score")){
+toplot<-data.frame(DT=pncd[,metr], RF=pncr[,metr],support=pncd[,"support"])
+print(ggplot(toplot, aes(DT, RF)) +
+  geom_point(aes(colour = log10(support)))+
+    scale_colour_gradient(low = "yellow", high = "blue")+
+   geom_abline(intercept = 0, slope = 1,col="grey")+
+    ggtitle(paste(metr,"comparison")))
+
+#test
+print(metr)
+print(wilcox.test(toplot[,"RF"],toplot[,"DT"],paired=T,alternative = "greater"))
+
+}
+
+
+```
+
+
