@@ -20,7 +20,8 @@ inputDir=here("data")
 ## acquiring folder names of pangolin results
 ########
 timev<-dir(inputDir,pattern="^pangolin_analysis")
-timevclean<-substr(gsub("pangolin_analysis_2021_","",timev),1,5) ## narrowing down to month_day
+##for 2022 as well
+timevclean<-substr(gsub("pangolin_analysis_20","",timev),1,8) ## narrowing down to month_day
 
   
   ## should there be two runs on the same day, chose the later one by default
